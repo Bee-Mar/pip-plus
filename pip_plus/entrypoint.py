@@ -10,7 +10,7 @@ from pip_plus.constants import COMPARISON_OPERATORS, INSTALL, UNINSTALL, REQUIRE
 
 
 def main():
-    if len(argv) < 3 or argv[1] != INSTALL and argv[1] != UNINSTALL:
+    if len(argv) < 3 or argv[1] != INSTALL and argv[1 ] != UNINSTALL:
         utils.run_user_pip_cmd(argv[1:])
         exit(0)
 
@@ -21,47 +21,24 @@ def main():
     if not requirements_txt.exists():
         requirements_txt.touch()
 
-    pinned_packages: List[PinnedPackage] = utils.extract_pinned_packages(argv[1:])
+    user_provided_packages: List[PinnedPackage] = utils.extract_user_provided_packages(argv[1:])
 
     utils.run_user_pip_cmd(argv[1:])
 
-    packages_installed: List[PinnedPackage] = utils.get_installed_packages(pinned_packages)
+    packages_installed: List[PinnedPackage] = utils.get_installed_packages(user_provided_packages)
+    current_requirements: List[PinnedPackage] = utils.get_current_requirements_txt(requirements_txt)
 
-    updated_requirements: List[PinnedPackage] = []
-
-    with open(str(requirements_txt)) as requirements_file:
-        for line in requirements_file:
-            found_comparison: bool = False
-
-            for comparison in COMPARISON_OPERATORS:
-                if line.find(comparison) != -1:
-                    found_comparison = True
-                    split: List[str] = line.split(comparison)
-                    pinned_package: PinnedPackage = PinnedPackage(split[0])
-
-                    try:
-                        pinned_package.comparison = comparison
-                        pinned_package.version = split[1].strip()
-                    except Exception as error:
-                        pass
-
-                    updated_requirements.append(pinned_package)
-                    break
-
-            if not found_comparison:
-                updated_requirements.append(PinnedPackage(line))
-
-    for package in pinned_packages:
+    for package in user_provided_packages:
         if pip_option == INSTALL:
-            if package not in updated_requirements:
-                updated_requirements.append(package)
-        elif package in updated_requirements:
-            updated_requirements.remove(package)
+            if package not in current_requirements:
+                current_requirements.append(package)
+        elif package in current_requirements:
+            current_requirements.remove(package)
 
     with open(str(requirements_txt), "r+") as requirements_file:
         requirements_file.truncate(0)
 
-        for requirement in updated_requirements:
+        for requirement in current_requirements:
             requirements_file.write(f"{requirement}\n")
 
 

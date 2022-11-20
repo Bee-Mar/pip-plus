@@ -1,1 +1,4 @@
 black
+pydocstyle
+pylint
+pytest
