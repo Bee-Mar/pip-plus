@@ -1,1 +1,2 @@
 faker
+pylint~=2.15.6
