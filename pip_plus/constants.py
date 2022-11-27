@@ -16,4 +16,3 @@ UNINSTALL: str = "uninstall"
 REQUIREMENTS_TXT: str = "requirements.txt"
 DEV_REQUIREMENTS_TXT: str = "requirements.dev.txt"
 TEST_REQUIREMENTS_TXT: str = "test/requirements.txt"
-

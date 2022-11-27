@@ -49,11 +49,11 @@ def main():
     if "--test" in sys.argv:
         requirements_file = TEST_REQUIREMENTS_TXT
         sys.argv.remove("--test")
-        log.debug(f"'--test' argument provided by user.")
+        log.debug("'--test' argument provided by user.")
     elif "--dev" in sys.argv:
         requirements_file = DEV_REQUIREMENTS_TXT
         sys.argv.remove("--dev")
-        log.debug(f"'--dev' argument provided by user.")
+        log.debug("'--dev' argument provided by user.")
 
     requirements_txt: PosixPath = (
         Path(Path(virtual_env).parent / Path(requirements_file)) if virtual_env else Path(requirements_file)
