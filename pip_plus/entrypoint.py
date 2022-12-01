@@ -35,6 +35,17 @@ def main():
         or "-r" in sys.argv
         or "--requirement" in sys.argv
     ):
+
+        # if sys.argv[1] == "help" or sys.argv[1] == "--help" or sys.argv[1] == "-h":
+        #     print("\nPip-Plus Options:\n ",
+        #           "--test\t\tSaves package information to './test/requirements.txt'\n",
+        #           " --dev\t\tSaves package information to ./requirements.dev.txt")
+
+        #     print("\nPip-Plus Usage:\n ",
+        #           "pip+ --test <command> [options]\n",
+        #           " pip+ --dev <command> [options]\n",
+        #           " pip+ <command> [options]")
+
         log.info(
             "User did not provide 'install', 'uninstall', '-r', or '--requirement' arguments. Running 'pip' normally."
         )
