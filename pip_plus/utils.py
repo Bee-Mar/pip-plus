@@ -1,20 +1,51 @@
 #!/usr/bin/env python3
 import pkgutil
-from typing import List, Any
+import importlib.metadata
+from typing import List, Any, Tuple
 from subprocess import Popen, CalledProcessError
-from importlib.metadata import version
 from pathlib import PosixPath
 from pip_plus.pinned_package import PinnedPackage
 from pip_plus.constants import COMPARISON_OPERATORS, INSTALL, UNINSTALL
+from pip_plus.logger import PipPlusLogger
+from pip_plus.constants import REQUIREMENTS_TXT, DEV_REQUIREMENTS_TXT, TEST_REQUIREMENTS_TXT
+
+log = PipPlusLogger.get_logger(__name__)
 
 
-def run_user_pip_cmd(arguments: List[Any]) -> None:
+def determine_requirements_file(arguments: List[Any]) -> Tuple[List[Any], str]:
+    """
+    Determines the correct requirements file name to use based on user arguments.
+
+    :param arguments: user provided arguments passed to 'pip+'
+
+    :returns: Tuple[List[Any], str]
+    """
+
+    requirements_file: str = REQUIREMENTS_TXT
+
+    if "--test" in arguments and "--dev" in arguments:
+        return None, None
+
+    if "--test" in arguments:
+        requirements_file = TEST_REQUIREMENTS_TXT
+        arguments.remove("--test")
+        log.debug("'--test' argument provided by user.")
+    elif "--dev" in arguments:
+        requirements_file = DEV_REQUIREMENTS_TXT
+        arguments.remove("--dev")
+        log.debug("'--dev' argument provided by user.")
+
+    return arguments, requirements_file
+
+
+# there really isn't a point in testing this
+def run_user_pip_cmd(arguments: List[Any]) -> None:  # pragma: no cover
     """
     Executes a 'pip' command in a subprocess.
 
     :param arguments: arguments passed to 'pip'
-    :returns: None
 
+    :returns: None
     """
 
     try:
@@ -72,14 +103,14 @@ def get_installed_packages(user_provided_packages: List[PinnedPackage]) -> List[
             if module.name == package.name:
                 if not package.comparison_operator and not package.version:
                     package.comparison_operator = "~="
-                    package.version = version(module.name)
+                    package.version = importlib.metadata.version(module.name)
 
                 packages_installed.append(package)
 
     return packages_installed
 
 
-def get_current_requirements_txt(requirements_txt: PosixPath) -> List[PinnedPackage]:
+def extract_pinned_packages_from_requirements(requirements_txt: PosixPath) -> List[PinnedPackage]:
     """
     Parses the current requirements.txt as a List[PinnedPackage].
 
@@ -110,3 +141,24 @@ def get_current_requirements_txt(requirements_txt: PosixPath) -> List[PinnedPack
                 current_requirements.append(PinnedPackage(line))
 
     return current_requirements
+
+
+def update_requirements_file(
+    requirements_txt: PosixPath,
+    user_provided_packages: List[str],
+    current_requirements: List[str],
+    packages_installed: List[PinnedPackage],
+    pip_option: str,
+) -> None:
+    for package in user_provided_packages:
+        if pip_option == INSTALL:
+            if package not in current_requirements and package in packages_installed:
+                current_requirements.append(package)
+        elif package in current_requirements:
+            current_requirements.remove(package)
+
+    with open(str(requirements_txt), "r+", encoding="utf-8") as requirements_file:
+        requirements_file.truncate(0)
+
+        for requirement in current_requirements:
+            requirements_file.write(f"{requirement}\n")

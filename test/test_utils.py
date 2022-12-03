@@ -1,17 +1,49 @@
 #!/usr/bin/env python3
+import random
+import tempfile
+from pathlib import PosixPath, Path
+from shutil import rmtree
+from os import chdir, mkdir
 from typing import List
+from unittest.mock import patch
 from faker import Faker
 from pip_plus import utils
 from pip_plus.pinned_package import PinnedPackage
-from pip_plus.constants import COMPARISON_OPERATORS
-from unittest.mock import MagicMock, patch
-import random
+from pip_plus.constants import (
+    COMPARISON_OPERATORS,
+    REQUIREMENTS_TXT,
+    DEV_REQUIREMENTS_TXT,
+    TEST_REQUIREMENTS_TXT,
+    DEV_ARG,
+    TEST_ARG,
+)
+
+
+def random_int(min_value=1, max_value=10):
+    fake: Faker = Faker()
+    return fake.pyint(min_value=min_value, max_value=max_value)
+
+
+def create_random_pinned_packages(with_version: bool = False) -> List[PinnedPackage]:
+    fake: Faker = Faker()
+
+    if with_version:
+        return [
+            PinnedPackage(
+                fake.word(),
+                version=f"{random_int()}.{random_int()}.{random_int()}",
+                comparison_operator=random.choice(COMPARISON_OPERATORS),
+            )
+            for _ in range(random_int())
+        ]
+
+    return [PinnedPackage(fake.word()) for _ in range(random_int())]
 
 
 def test_pinned_package_setters():
     fake: Faker = Faker()
     random_name: str = fake.word()
-    random_version: str = f"{fake.pyint(min_value=0, max_value=10)}.{fake.pyint(min_value=0, max_value=10)}.{fake.pyint(min_value=0, max_value=10)}"
+    random_version: str = f"{random_int()}.{random_int()}.{random_int()}"
     random_comparison_operator: str = random.choice(COMPARISON_OPERATORS)
     fixture: PinnedPackage = PinnedPackage(
         random_name, version=random_version, comparison_operator=random_comparison_operator
@@ -145,13 +177,10 @@ def test_extract_user_provided_packages_for_removal_with_additional_args():
         assert package in fake_uninstall_arguments
 
 
-def test_get_installed_packages():
+def test_get_installed_packages_with_version_provided():
     fake: Faker = Faker()
 
-    random_provided_packages: List[PinnedPackage] = [
-        PinnedPackage(fake.word(), version="1.0.0", comparison_operator="!=")
-        for _ in range(fake.pyint(min_value=1, max_value=10))
-    ]
+    random_provided_packages: List[PinnedPackage] = create_random_pinned_packages(True)
 
     with patch("pkgutil.iter_modules") as patched_iter_modules:
         patched_iter_modules.return_value = random_provided_packages
@@ -160,3 +189,179 @@ def test_get_installed_packages():
 
         for pkg in result:
             assert pkg in random_provided_packages
+
+
+def test_get_installed_packages_without_version_provided():
+    fake: Faker = Faker()
+
+    length: int = random_int()
+    semantic_version: str = f"{random_int()}.{random_int()}.{random_int()}"
+
+    random_provided_packages: List[PinnedPackage] = [PinnedPackage(fake.word()) for _ in range(length)]
+
+    with patch("pkgutil.iter_modules") as patched_iter_modules, patch("importlib.metadata.version") as patched_version:
+        patched_iter_modules.return_value = random_provided_packages
+        patched_version.return_value = semantic_version
+
+        result = utils.get_installed_packages(random_provided_packages)
+
+        for pkg in result:
+            assert pkg in random_provided_packages
+            assert pkg.version == semantic_version
+            assert pkg.comparison_operator == "~="
+
+
+def test_determine_requirements_file_returns_test_requirements():
+    fake: Faker = Faker()
+    arguments, requirements = utils.determine_requirements_file([TEST_ARG] + [fake.word() for _ in range(random_int())])
+
+    assert TEST_ARG not in arguments
+    assert requirements == TEST_REQUIREMENTS_TXT
+
+
+def test_determine_requirements_file_returns_dev_requirements():
+    fake: Faker = Faker()
+    arguments, requirements = utils.determine_requirements_file([DEV_ARG] + [fake.word() for _ in range(random_int())])
+
+    assert DEV_ARG not in arguments
+    assert requirements == DEV_REQUIREMENTS_TXT
+
+
+def test_determine_requirements_file_returns_none():
+    fake: Faker = Faker()
+    arguments, requirements = utils.determine_requirements_file(
+        [DEV_ARG, TEST_ARG] + [fake.word() for _ in range(random_int())]
+    )
+    assert arguments is None and requirements is None
+
+
+def test_determine_requirements_file_returns_regular_requirements():
+    fake: Faker = Faker()
+    arguments, requirements = utils.determine_requirements_file([fake.word() for _ in range(random_int())])
+
+    assert requirements == REQUIREMENTS_TXT
+
+
+def test_extract_pinned_packages_from_requirements_is_empty():
+    tempdir: str = tempfile.mkdtemp()
+    mkdir(f"{tempdir}/test")  # just in case the test requirement is selected
+    chdir(tempdir)
+
+    random_requirements_file: str = random.choice([TEST_REQUIREMENTS_TXT, DEV_REQUIREMENTS_TXT, REQUIREMENTS_TXT])
+
+    requirements_txt: PosixPath = Path(Path(tempdir) / Path(random_requirements_file))
+    requirements_txt.touch(exist_ok=True)
+    requirements: List[PinnedPackage] = utils.extract_pinned_packages_from_requirements(requirements_txt)
+    assert len(requirements) == 0
+
+
+def test_extract_pinned_packages_from_requirements_matches_with_version():
+    fake: Faker = Faker()
+    tempdir: str = tempfile.mkdtemp()
+    mkdir(f"{tempdir}/test")  # just in case the test requirement is selected
+
+    random_requirements_file: str = random.choice([TEST_REQUIREMENTS_TXT, DEV_REQUIREMENTS_TXT, REQUIREMENTS_TXT])
+
+    requirements_txt: PosixPath = Path(Path(tempdir) / Path(random_requirements_file))
+    requirements_txt.touch(exist_ok=True)
+
+    expected_requirements: List[PinnedPackage] = create_random_pinned_packages(True)
+
+    with open(str(requirements_txt), "r+", encoding="utf-8") as requirements_file:
+        for requirement in expected_requirements:
+            requirements_file.write(f"{str(requirement)}\n")
+
+    requirements: List[PinnedPackage] = utils.extract_pinned_packages_from_requirements(requirements_txt)
+
+    for index, requirement in enumerate(requirements):
+        assert requirement.comparison_operator == expected_requirements[index].comparison_operator
+        assert requirement.name == expected_requirements[index].name
+        assert requirement.version == expected_requirements[index].version
+
+    rmtree(tempdir)
+
+
+def test_extract_pinned_packages_from_requirements_matches_without_version():
+    fake: Faker = Faker()
+    tempdir: str = tempfile.mkdtemp()
+    mkdir(f"{tempdir}/test")  # just in case the test requirement is selected
+
+    random_requirements_file: str = random.choice([TEST_REQUIREMENTS_TXT, DEV_REQUIREMENTS_TXT, REQUIREMENTS_TXT])
+
+    requirements_txt: PosixPath = Path(Path(tempdir) / Path(random_requirements_file))
+    requirements_txt.touch(exist_ok=True)
+
+    expected_requirements: List[PinnedPackage] = create_random_pinned_packages()
+
+    with open(str(requirements_txt), "r+", encoding="utf-8") as requirements_file:
+        for requirement in expected_requirements:
+            requirements_file.write(f"{str(requirement)}\n")
+
+    requirements: List[PinnedPackage] = utils.extract_pinned_packages_from_requirements(requirements_txt)
+
+    for index, requirement in enumerate(requirements):
+        assert requirement.comparison_operator == ""
+        assert requirement.name == expected_requirements[index].name
+        assert requirement.version == ""
+
+    rmtree(tempdir)
+
+
+def test_update_requirements_file_install_option():
+    fake: Faker = Faker()
+    tempdir: str = tempfile.mkdtemp()
+    mkdir(f"{tempdir}/test")  # just in case the test requirement is selected
+
+    random_requirements_file: str = random.choice([TEST_REQUIREMENTS_TXT, DEV_REQUIREMENTS_TXT, REQUIREMENTS_TXT])
+
+    requirements_txt: PosixPath = Path(Path(tempdir) / Path(random_requirements_file))
+    requirements_txt.touch(exist_ok=True)
+
+    user_provided_packages: List[PinnedPackage] = create_random_pinned_packages(True)
+    current_requirements: List[PinnedPackage] = create_random_pinned_packages(True)
+    packages_installed: List[PinnedPackage] = user_provided_packages
+
+    utils.update_requirements_file(
+        requirements_txt,
+        user_provided_packages,
+        current_requirements,
+        packages_installed,
+        "install",
+    )
+
+    updated_requirements = utils.extract_pinned_packages_from_requirements(requirements_txt)
+
+    for package in packages_installed:
+        assert package in updated_requirements
+
+    rmtree(tempdir)
+
+
+def test_update_requirements_file_uninstall_option():
+    fake: Faker = Faker()
+    tempdir: str = tempfile.mkdtemp()
+    mkdir(f"{tempdir}/test")  # just in case the test requirement is selected
+
+    random_requirements_file: str = random.choice([TEST_REQUIREMENTS_TXT, DEV_REQUIREMENTS_TXT, REQUIREMENTS_TXT])
+
+    requirements_txt: PosixPath = Path(Path(tempdir) / Path(random_requirements_file))
+    requirements_txt.touch(exist_ok=True)
+
+    user_provided_packages: List[PinnedPackage] = create_random_pinned_packages(True)
+    current_requirements: List[PinnedPackage] = create_random_pinned_packages(True)
+    packages_installed: List[PinnedPackage] = user_provided_packages
+
+    utils.update_requirements_file(
+        requirements_txt,
+        user_provided_packages,
+        current_requirements,
+        packages_installed,
+        "uninstall",
+    )
+
+    updated_requirements = utils.extract_pinned_packages_from_requirements(requirements_txt)
+
+    for package in packages_installed:
+        assert package not in updated_requirements
+
+    rmtree(tempdir)
