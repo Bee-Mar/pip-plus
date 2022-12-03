@@ -45,7 +45,7 @@ def run_user_pip_cmd(arguments: List[Any]) -> None:  # pragma: no cover
 
     :param arguments: arguments passed to 'pip'
 
-    :returns: None
+    :returns none: None
     """
 
     try:

@@ -356,7 +356,7 @@ def test_update_requirements_file_uninstall_option():
         user_provided_packages,
         current_requirements,
         packages_installed,
-        "uninstall",
+        "uninst all",
     )
 
     updated_requirements = utils.extract_pinned_packages_from_requirements(requirements_txt)
