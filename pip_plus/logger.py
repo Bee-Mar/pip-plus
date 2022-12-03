@@ -5,6 +5,7 @@ from pathlib import PosixPath, Path
 from os import environ
 from json import dumps
 from pip_plus.__version__ import semantic_version
+import logging
 
 
 class PipPlusLogger:
@@ -55,6 +56,20 @@ class PipPlusLogger:
 
         log_file_handler.setFormatter(formatter)
 
-        PipPlusLogger._log.setLevel(environ.get("PIP_PLUS_LOG_LEVEL", "INFO").upper())
+        log_level = environ.get("PIP_PLUS_LOG_LEVEL", "INFO").upper()
+
+        if log_level == "INFO":
+            PipPlusLogger._log.setLevel(logging.INFO)
+        elif log_level == "WARN":
+            PipPlusLogger._log.setLevel(logging.WARN)
+        elif log_level == "DEBUG":
+            PipPlusLogger._log.setLevel(logging.DEBUG)
+        elif log_level == "ERROR":
+            PipPlusLogger._log.setLevel(logging.DEBUG)
+        elif log_level == "FATAL":
+            PipPlusLogger._log.setLevel(logging.FATAL)
+        else:
+            # just in case the user didn't provide something that was usable
+            PipPlusLogger._log.setLevel(logging.INFO)
 
         return PipPlusLogger._log

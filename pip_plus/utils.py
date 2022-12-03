@@ -16,9 +16,11 @@ def determine_requirements_file(arguments: List[Any]) -> Tuple[List[Any], str]:
     """
     Determines the correct requirements file name to use based on user arguments.
 
-    :param arguments: user provided arguments passed to 'pip+'
+    :param arguments:
+        user provided arguments passed to 'pip+'
 
-    :returns: Tuple[List[Any], str]
+    :returns updated_arguments, requirements_file:
+        the modified list of arguments and corresponding
     """
 
     requirements_file: str = REQUIREMENTS_TXT
@@ -43,15 +45,21 @@ def run_user_pip_cmd(arguments: List[Any]) -> None:  # pragma: no cover
     """
     Executes a 'pip' command in a subprocess.
 
-    :param arguments: arguments passed to 'pip'
+    :param arguments:
+        arguments passed to 'pip'
 
-    :returns none: None
+    :returns none:
+        None
     """
 
+    pip_command: str = f"pip {' '.join(arguments)}"
+    log.debug(f"Executing '{pip_command}'")
+
     try:
-        with Popen(f"pip {' '.join(arguments)}", shell=True) as pip_command:
+        with Popen(pip_command, shell=True) as pip_command:
             pip_command.wait()
-    except CalledProcessError:
+    except CalledProcessError as error:
+        log.error(f"Encountered error when running '{pip_command}': {str(error)}")
         pass
 
 
@@ -60,8 +68,11 @@ def extract_user_provided_packages(arguments: List[str]) -> List[PinnedPackage]:
     Given the user arguments provided to pip+, the package names, versions and
     comparison_operator operators are extracted.
 
-    :param arguments: the user provided arguments which are eventually passed to 'pip'
-    :returns: the list of extracted packages, which may or may not include version numbers
+    :param arguments:
+        the user provided arguments which are eventually passed to 'pip'
+
+    :returns user_provided_packages:
+        the list of extracted packages, which may or may not include version numbers
     """
 
     user_provided_packages: List[PinnedPackage] = []
@@ -82,6 +93,7 @@ def extract_user_provided_packages(arguments: List[str]) -> List[PinnedPackage]:
             if not found_comparison_operator:
                 user_provided_packages.append(PinnedPackage(argument))
 
+    log.debug(f"Extracted packages {[str(pkg) for pkg in user_provided_packages]} from user arguments")
     return user_provided_packages
 
 
@@ -92,8 +104,11 @@ def get_installed_packages(user_provided_packages: List[PinnedPackage]) -> List[
     comparison_operator operator was provided by the user prior to installation, those
     are captured. If not, the '~=' operator is stored.
 
-    :param user_provided_packages: the list of packages the user wanted installed
-    :returns pinned_packages: the list of packages which were successfully installed
+    :param user_provided_packages:
+        the list of packages the user wanted installed
+
+    :returns pinned_packages:
+        the list of packages which were successfully installed
     """
 
     packages_installed: List[PinnedPackage] = []
@@ -114,8 +129,11 @@ def extract_pinned_packages_from_requirements(requirements_txt: PosixPath) -> Li
     """
     Parses the current requirements.txt as a List[PinnedPackage].
 
-    :param requirements_txt: a PosixPath to the requirements.txt
-    :returns current_requirements: the List[PinnedPackage] matching those in the requirements.txt
+    :param requirements_txt:
+        a PosixPath to the requirements.txt
+
+    :returns current_requirements:
+        the List[PinnedPackage] matching those in the requirements.txt
     """
 
     current_requirements: List[PinnedPackage] = []
@@ -150,6 +168,30 @@ def update_requirements_file(
     packages_installed: List[PinnedPackage],
     pip_option: str,
 ) -> None:
+    """
+    Updates the appropriate requirements file with all of the packages
+    installed along with the matching version number. If user chose to remove
+    packages, those are removed from the requirements file.
+
+    :param requirements_txt:
+        the file to update
+
+    :param user_provided_packages:
+        the list of packages the user passed in as arguments
+
+    :param current_requirements:
+        the list of packages found in the requirements file prior to executing this function
+
+    :param packages_installed:
+        the list of packages installed after executing the pip command desired by the user
+
+    :param pip_option:
+        either the 'install' or 'uninstall' option
+
+    :returns none:
+        None
+    """
+
     for package in user_provided_packages:
         if pip_option == INSTALL:
             if package not in current_requirements and package in packages_installed:

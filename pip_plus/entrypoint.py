@@ -22,6 +22,9 @@ def main():
     """
 
     log = PipPlusLogger.get_logger(__name__)
+    log_level = environ.get("PIP_PLUS_LOG_LEVEL", "INFO").upper()
+
+    log.info(f"User set PIP_PLUS_LOG_LEVEL to '{log_level}")
 
     if len(argv) < 3 or (argv[1] != INSTALL and argv[1] != UNINSTALL) or "-r" in argv or "--requirement" in argv:
 
@@ -35,7 +38,7 @@ def main():
         #           " pip+ --dev <command> [options]\n",
         #           " pip+ <command> [options]")
 
-        log.info(
+        log.in fo(
             "User did not provide 'install', 'uninstall', '-r', or '--requirement' arguments. Running 'pip' normally."
         )
         utils.run_user_pip_cmd(argv[1:])
@@ -44,9 +47,9 @@ def main():
     pip_option: str = argv[1]
     virtual_env: str = environ.get("VIRTUAL_ENV")
 
-    argv, requirements_file = determine_requirements_file(argv)
+    updated_arguments, requirements_file = utils.determine_requirements_file(argv)
 
-    if requirements_file is None and argv is None:
+    if requirements_file is None and updated_arguments is None:
         message = f"Invalid arguments, '{DEV_ARG}' and '{TEST_ARG}' options cannot be used simultaneously."
         print(f"ERROR: {message}")
         log.error(message)
@@ -61,13 +64,9 @@ def main():
     requirements_txt.parent.mkdir(exist_ok=True)
     requirements_txt.touch(exist_ok=True)
 
-    user_provided_packages: List[PinnedPackage] = utils.extract_user_provided_packages(argv[1:])
+    user_provided_packages: List[PinnedPackage] = utils.extract_user_provided_packages(updated_arguments[1:])
 
-    log.debug(
-        f"Extracted packages {[str(pkg) for pkg in user_provided_packages]} from user arguments. Running 'pip' command."
-    )
-
-    utils.run_user_pip_cmd(argv[1:])
+    utils.run_user_pip_cmd(updated_arguments[1:])
 
     packages_installed: List[PinnedPackage] = utils.get_installed_packages(user_provided_packages)
     current_requirements: List[PinnedPackage] = utils.extract_pinned_packages_from_requirements(requirements_txt)
