@@ -27,6 +27,7 @@ jobs:
           path: |
              ~/pip-plus/dist
              ~/.cache/pip
+          key: ${{ runner.os }}-pip-plus-dev-${{ hashFiles('requirements.dev.txt') }}-pip-plus-test-${{ hashFiles('test/requirements.txt') }}
       - name: Python Dependencies
         shell: bash
         run: |
