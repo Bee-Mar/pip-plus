@@ -5,7 +5,6 @@ from pathlib import PosixPath, Path
 from os import environ
 from json import dumps
 from pip_plus.__version__ import semantic_version
-import logging
 
 
 class PipPlusLogger:
@@ -14,7 +13,7 @@ class PipPlusLogger:
     a desired way.
     """
 
-    _log: logging.Logger = None
+    _log: logging.Logger = None  # type: ignore
 
     @staticmethod
     def get_logger(module_name: str) -> logging.Logger:

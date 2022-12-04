@@ -37,6 +37,7 @@ jobs:
         run: |
           pylint pip_plus
           pytest test
+          mypy pip_plus
       - name: Build & Bundle
         shell: bash
         run: |

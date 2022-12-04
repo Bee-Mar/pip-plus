@@ -12,17 +12,19 @@ from pip_plus.constants import REQUIREMENTS_TXT, DEV_REQUIREMENTS_TXT, TEST_REQU
 log = PipPlusLogger.get_logger(__name__)
 
 
-def help() -> None:  # pragma: no cover
+def usage() -> None:  # pragma: no cover
     print(
         "\nPip-Plus Options:\n",
-        " --test\t\t      Saves package information to './test/requirements.txt'\n",
-        " --dev\t\t\t      Saves package information to ./requirements.dev.txt",
+        " --test\t\t\t\tSaves package information to PIP_PLUS_TEST_REQUIREMENTS_PATH\n",
+        " --dev\t\t\t\t\tSaves package information to PIP_PLUS_DEV_REQUIREMENTS_PATH",
     )
 
     print(
         "\nPip-Plus Environment Variables:\n",
-        " PIP_PLUS_LOG_LEVEL\t      Set log level to one of (DEBUG, INFO, WARN, ERROR, FATAL) - Default is INFO\n",
-        "\t\t\t      Logs are stored in ~/.local/share/pip-plus/log",
+        " PIP_PLUS_DEV_REQUIREMENTS_PATH\tPath to the dev requirements.txt. Default is set to requirements.dev.txt\n",
+        " PIP_PLUS_TEST_REQUIREMENTS_PATH\tPath to test requirements.txt. Default is set to 'test/requirements.txt'\n",
+        " PIP_PLUS_LOG_LEVEL\t\t\tSet log level to one of (DEBUG, INFO, WARN, ERROR, FATAL) - Default is INFO\n",
+        "\t\t\t\t\tLogs are stored in ~/.local/share/pip-plus/log",
     )
 
     print(
@@ -49,7 +51,7 @@ def determine_requirements_file(arguments: List[Any]) -> Tuple[List[Any], str]:
     requirements_file: str = REQUIREMENTS_TXT
 
     if "--test" in arguments and "--dev" in arguments:
-        return None, None
+        return None, None # type: ignore
 
     if "--test" in arguments:
         requirements_file = TEST_REQUIREMENTS_TXT
@@ -75,15 +77,14 @@ def run_user_pip_cmd(arguments: List[Any]) -> None:  # pragma: no cover
         None
     """
 
-    pip_command: str = f"pip {' '.join(arguments)}"
-    log.debug(f"Executing '{pip_command}'")
+    pip_command_string: str = f"pip {' '.join(arguments)}"
+    log.debug(f"Executing '{pip_command_string}'")
 
     try:
-        with Popen(pip_command, shell=True) as pip_command:
+        with Popen(pip_command_string, shell=True) as pip_command:
             pip_command.wait()
     except CalledProcessError as error:
-        log.error(f"Encountered error when running '{pip_command}': {str(error)}")
-        pass
+        log.error(f"Encountered error when running '{pip_command_string}': {str(error)}")
 
 
 def extract_user_provided_packages(arguments: List[str]) -> List[PinnedPackage]:
@@ -120,7 +121,7 @@ def extract_user_provided_packages(arguments: List[str]) -> List[PinnedPackage]:
     return user_provided_packages
 
 
-def get_installed_packages(user_provided_packages: List[PinnedPackage]) -> List[str]:
+def get_installed_packages(user_provided_packages: List[PinnedPackage]) -> List[PinnedPackage]:
     """
     This is intended to be executed after a 'pip' command to capture the
     packages that were successfully installed. If a version number and

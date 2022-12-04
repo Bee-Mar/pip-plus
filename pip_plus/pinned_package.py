@@ -22,8 +22,10 @@ class PinnedPackage:
     def __str__(self) -> str:
         return f"{self.name}{self.comparison_operator}{self.version}"
 
-    def __eq__(self, other: str) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, PinnedPackage):
             return self.name == other.name
+        if isinstance(other, str):
+            return self.name == other
 
         return self.name == other
