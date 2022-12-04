@@ -33,7 +33,7 @@ class PipPlusLogger:
         PipPlusLogger._log = logging.getLogger("pip_plus").getChild(module_name)
 
         pip_plus_log_dir: PosixPath = PosixPath(f"{home}/.local/share/pip-plus/log")
-        pip_plus_log_dir.mkdir(exist_ok=True)
+        pip_plus_log_dir.mkdir(exist_ok=True, parents=True)
 
         log_file_handler: RotatingFileHandler = RotatingFileHandler(
             f"{str(pip_plus_log_dir)}/pip-plus.log", maxBytes=2000, backupCount=5

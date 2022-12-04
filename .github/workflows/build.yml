@@ -1,0 +1,50 @@
+name: Pip-Plus Build Pipeline
+
+on:
+  push:
+    branches:
+      - "pipeline-test"
+      - "main"
+      - "develop"
+    tags:
+      - '*'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v2
+        with:
+            python-version: 3.8
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/cache@v2
+        with:
+          path: |
+             ~/pip-plus/dist
+             ~/.cache/pip
+      - name: Python Dependencies
+        shell: bash
+        run: |
+          pip install -r requirements.dev.txt -r test/requirements.txt
+      - name: Python Tests
+        shell: bash
+        run: |
+          pylint pip_plus
+          pytest test
+      - name: Build & Bundle
+        shell: bash
+        run: |
+          python -m build
+      - name: Publish to PyPi
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_TOKEN }}
+          skip_existing: true
+          verbose: true
