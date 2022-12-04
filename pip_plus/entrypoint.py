@@ -27,20 +27,8 @@ def main():
     log.info(f"User set PIP_PLUS_LOG_LEVEL to '{log_level}")
 
     if len(argv) < 3 or (argv[1] != INSTALL and argv[1] != UNINSTALL) or "-r" in argv or "--requirement" in argv:
-
-        # if argv[1] == "help" or argv[1] == "--help" or argv[1] == "-h":
-        #     print("\nPip-Plus Options:\n ",
-        #           "--test\t\tSaves package information to './test/requirements.txt'\n",
-        #           " --dev\t\tSaves package information to ./requirements.dev.txt")
-
-        #     print("\nPip-Plus Usage:\n ",
-        #           "pip+ --test <command> [options]\n",
-        #           " pip+ --dev <command> [options]\n",
-        #           " pip+ <command> [options]")
-
-        log.in fo(
-            "User did not provide 'install', 'uninstall', '-r', or '--requirement' arguments. Running 'pip' normally."
-        )
+        if argv[1] == "help" or argv[1] == "--help" or argv[1] == "-h":
+            utils.help()
         utils.run_user_pip_cmd(argv[1:])
         sys.exit(0)
 

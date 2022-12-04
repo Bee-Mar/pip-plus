@@ -12,6 +12,29 @@ from pip_plus.constants import REQUIREMENTS_TXT, DEV_REQUIREMENTS_TXT, TEST_REQU
 log = PipPlusLogger.get_logger(__name__)
 
 
+def help() -> None:  # pragma: no cover
+    print(
+        "\nPip-Plus Options:\n",
+        " --test\t\t      Saves package information to './test/requirements.txt'\n",
+        " --dev\t\t\t      Saves package information to ./requirements.dev.txt",
+    )
+
+    print(
+        "\nPip-Plus Environment Variables:\n",
+        " PIP_PLUS_LOG_LEVEL\t      Set log level to one of (DEBUG, INFO, WARN, ERROR, FATAL) - Default is INFO\n",
+        "\t\t\t      Logs are stored in ~/.local/share/pip-plus/log",
+    )
+
+    print(
+        "\nPip-Plus Usage:\n ",
+        "pip+ --test <command> [options]\n",
+        " pip+ --dev <command> [options]\n",
+        " pip+ <command> [options]",
+    )
+
+    log.info("User did not provide 'install', 'uninstall', '-r', or '--requirement' arguments. Running 'pip' normally.")
+
+
 def determine_requirements_file(arguments: List[Any]) -> Tuple[List[Any], str]:
     """
     Determines the correct requirements file name to use based on user arguments.
