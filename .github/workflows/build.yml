@@ -3,7 +3,6 @@ name: Pip-Plus Build Pipeline
 on:
   push:
     branches:
-      - "pipeline-test"
       - "main"
       - "develop"
     tags:
