@@ -27,6 +27,7 @@ setup(
     name="pip-plus",
     version=semantic_version,
     description="Pip-Plus",
+    long_description="The Pip-Plus CLI automatically updates requirements.txt following install/removal of packages",
     url="https://github.com/Bee-Mar/pip-plus",
     author="Brandon Marlowe",
     download_url=f"https://github.com/Bee-Mar/pip-plus/archive/pip-plus-{semantic_version}.tar.gz",
