@@ -19,9 +19,6 @@ def main():
     """
 
     log = PipPlusLogger.get_logger(__name__)
-    log_level = environ.get("PIP_PLUS_LOG_LEVEL", "INFO").upper()
-
-    log.info(f"User set PIP_PLUS_LOG_LEVEL to '{log_level}")
 
     if (
         len(sys.argv) < 3

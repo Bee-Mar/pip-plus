@@ -15,22 +15,23 @@ def load_requirements() -> List[str]:
         The list of packages required by the module
     """
 
-    if Path("requiements.txt").exists():
-        requirements_file = open("./requirements.txt", "r")
-        requirements = requirements_file.read().splitlines()
-        return requirements
+    requirements: List[str] = []
 
-    return []
+    if Path("requirements.txt").exists():
+        with open("requirements.txt") as requirements_file:
+            requirements = requirements_file.read().splitlines()
+
+    return requirements
 
 
 setup(
-    name="pip-plus",
+    name="pip-plus-cli",
     version=semantic_version,
     description="Pip-Plus",
     long_description="The Pip-Plus CLI automatically updates requirements.txt following install/removal of packages",
     url="https://github.com/Bee-Mar/pip-plus",
     author="Brandon Marlowe",
-    download_url=f"https://github.com/Bee-Mar/pip-plus/archive/pip-plus-{semantic_version}.tar.gz",
+    download_url=f"https://github.com/Bee-Mar/pip-plus/archive/refs/tags/v{semantic_version}.tar.gz",
     author_email="bpmarlowe-software@protonmail.com",
     license="MIT",
     keywords="pip pip-plus pip_plus",

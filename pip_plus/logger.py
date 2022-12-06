@@ -57,16 +57,8 @@ class PipPlusLogger:
 
         log_level = environ.get("PIP_PLUS_LOG_LEVEL", "INFO").upper()
 
-        if log_level == "INFO":
-            PipPlusLogger._log.setLevel(logging.INFO)
-        elif log_level == "WARN":
-            PipPlusLogger._log.setLevel(logging.WARN)
-        elif log_level == "DEBUG":
-            PipPlusLogger._log.setLevel(logging.DEBUG)
-        elif log_level == "ERROR":
-            PipPlusLogger._log.setLevel(logging.DEBUG)
-        elif log_level == "FATAL":
-            PipPlusLogger._log.setLevel(logging.FATAL)
+        if log_level in ("INFO", "WARN", "DEBUG", "ERROR", "FATAL"):
+            PipPlusLogger._log.setLevel(getattr(logging, log_level))
         else:
             # just in case the user didn't provide something that was usable
             PipPlusLogger._log.setLevel(logging.INFO)
