@@ -5,4 +5,4 @@ patch: int = 0
 minor: int = 11
 major: int = 0
 
-semantic_version: str = f"{major}.{minor}.{patch}b"
+semantic_version: str = f"{major}.{minor}.{patch}b "

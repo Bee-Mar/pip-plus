@@ -26,8 +26,14 @@ def main():
         or "-r" in sys.argv
         or "--requirement" in sys.argv
     ):
-        if sys.argv[1] == "help" or sys.argv[1] == "--help" or sys.argv[1] == "-h":
+
+        if len(sys.argv) == 1 or (
+            len(sys.argv) > 1 and sys.argv[1] == "help" or sys.argv[1] == "--help" or sys.argv[1] == "-h"
+        ):
+            utils.run_user_pip_cmd(["help"])
             utils.usage()
+            sys.exit(0)
+
         utils.run_user_pip_cmd(sys.argv[1:])
         sys.exit(0)
 
@@ -55,7 +61,7 @@ def main():
 
     utils.run_user_pip_cmd(updated_arguments[1:])
 
-    packages_installed = utils.get_installed_packages(user_provided_packages)
+    packages_installed = utils.get_installed_packages(user_provided_packages, venv=virtual_env)
     current_requirements = utils.extract_pinned_packages_from_requirements(requirements_txt)
 
     utils.update_requirements_file(

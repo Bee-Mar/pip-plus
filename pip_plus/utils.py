@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
-import pkgutil
-import importlib.metadata
+import site
+import sys
+import pkg_resources
+import importlib
 from typing import List, Any, Tuple
 from subprocess import Popen, CalledProcessError
 from pathlib import PosixPath
 from pip_plus.pinned_package import PinnedPackage
 from pip_plus.constants import COMPARISON_OPERATORS, INSTALL, UNINSTALL
 from pip_plus.logger import PipPlusLogger
-from pip_plus.constants import REQUIREMENTS_TXT, DEV_REQUIREMENTS_TXT, TEST_REQUIREMENTS_TXT
+from pip_plus.constants import (
+    REQUIREMENTS_TXT,
+    DEV_REQUIREMENTS_TXT,
+    TEST_REQUIREMENTS_TXT,
+)
 
 log = PipPlusLogger.get_logger(__name__)
 
@@ -51,7 +57,7 @@ def determine_requirements_file(arguments: List[Any]) -> Tuple[List[Any], str]:
     requirements_file: str = REQUIREMENTS_TXT
 
     if "--test" in arguments and "--dev" in arguments:
-        return None, None # type: ignore
+        return None, None  # type: ignore
 
     if "--test" in arguments:
         requirements_file = TEST_REQUIREMENTS_TXT
@@ -121,7 +127,7 @@ def extract_user_provided_packages(arguments: List[str]) -> List[PinnedPackage]:
     return user_provided_packages
 
 
-def get_installed_packages(user_provided_packages: List[PinnedPackage]) -> List[PinnedPackage]:
+def get_installed_packages(user_provided_packages: List[PinnedPackage], venv: str = None) -> List[PinnedPackage]:
     """
     This is intended to be executed after a 'pip' command to capture the
     packages that were successfully installed. If a version number and
@@ -131,25 +137,44 @@ def get_installed_packages(user_provided_packages: List[PinnedPackage]) -> List[
     :param user_provided_packages:
         the list of packages the user wanted installed
 
+    :param venv:
+        the VIRTUAL_ENV, if it is active
+
     :returns pinned_packages:
         the list of packages which were successfully installed
     """
 
+    if venv:
+        site.addsitedir(f"{venv}/python{sys.version_info.major}.{sys.version_info.minor}/site-packages")
+
+    # the working_set needs to get refreshed because it is created at import
+    # time and becomes stale after the 'pip' command executes
+    importlib.reload(pkg_resources)
+
+    existing_packages: List[str] = list(
+        set([pkg.key for directory in sys.path for pkg in pkg_resources.find_distributions(directory)])
+    )
+
     packages_installed: List[PinnedPackage] = []
 
-    for module in pkgutil.iter_modules():
-        for package in user_provided_packages:
-            if module.name == package.name:
+    for package in user_provided_packages:
+        if package.name in existing_packages:
+            print(package)
+            try:
                 if not package.comparison_operator and not package.version:
                     package.comparison_operator = "~="
-                    package.version = importlib.metadata.version(module.name)
-
+                    package.version = pkg_resources.importlib.metadata.version(package.name)
+            except pkg_resources.importlib.metadata.PackageNotFoundError as error:
+                pass
+            finally:
                 packages_installed.append(package)
 
     return packages_installed
 
 
-def extract_pinned_packages_from_requirements(requirements_txt: PosixPath) -> List[PinnedPackage]:
+def extract_pinned_packages_from_requirements(
+    requirements_txt: PosixPath,
+) -> List[PinnedPackage]:
     """
     Parses the current requirements.txt as a List[PinnedPackage].
 
