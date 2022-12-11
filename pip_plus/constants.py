@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-from typing import List
+from __future__ import annotations
+
 from os import environ
+from typing import List
 
 COMPARISON_OPERATORS: List[str] = [
     "==",

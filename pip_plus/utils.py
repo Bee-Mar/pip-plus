@@ -1,19 +1,28 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
+import importlib.metadata
+import os
 import site
 import sys
-import pkg_resources
-import importlib
-from typing import List, Any, Tuple
-from subprocess import Popen, CalledProcessError
 from pathlib import PosixPath
-from pip_plus.pinned_package import PinnedPackage
-from pip_plus.constants import COMPARISON_OPERATORS, INSTALL, UNINSTALL
+from subprocess import CalledProcessError
+from subprocess import Popen
+from typing import Any
+from typing import List
+from typing import Set
+from typing import Tuple
+
+import pkg_resources
+
+from pip_plus.constants import COMPARISON_OPERATORS
+from pip_plus.constants import DEV_REQUIREMENTS_TXT
+from pip_plus.constants import INSTALL
+from pip_plus.constants import REQUIREMENTS_TXT
+from pip_plus.constants import TEST_REQUIREMENTS_TXT
+from pip_plus.constants import UNINSTALL
 from pip_plus.logger import PipPlusLogger
-from pip_plus.constants import (
-    REQUIREMENTS_TXT,
-    DEV_REQUIREMENTS_TXT,
-    TEST_REQUIREMENTS_TXT,
-)
+from pip_plus.pinned_package import PinnedPackage
 
 log = PipPlusLogger.get_logger(__name__)
 
@@ -40,7 +49,9 @@ def usage() -> None:  # pragma: no cover
         " pip+ <command> [options]",
     )
 
-    log.info("User did not provide 'install', 'uninstall', '-r', or '--requirement' arguments. Running 'pip' normally.")
+    log.debug(
+        "User did not provide 'install', 'uninstall', '-r', or '--requirement' arguments. Running 'pip' normally.",
+    )
 
 
 def determine_requirements_file(arguments: List[Any]) -> Tuple[List[Any], str]:
@@ -57,6 +68,7 @@ def determine_requirements_file(arguments: List[Any]) -> Tuple[List[Any], str]:
     requirements_file: str = REQUIREMENTS_TXT
 
     if "--test" in arguments and "--dev" in arguments:
+        log.debug("Invalid arguments. User provided both --dev and --test flags.")
         return None, None  # type: ignore
 
     if "--test" in arguments:
@@ -127,7 +139,7 @@ def extract_user_provided_packages(arguments: List[str]) -> List[PinnedPackage]:
     return user_provided_packages
 
 
-def get_installed_packages(user_provided_packages: List[PinnedPackage], venv: str = None) -> List[PinnedPackage]:
+def get_installed_packages(user_provided_packages: List[PinnedPackage], venv: str = "") -> List[PinnedPackage]:
     """
     This is intended to be executed after a 'pip' command to capture the
     packages that were successfully installed. If a version number and
@@ -145,30 +157,30 @@ def get_installed_packages(user_provided_packages: List[PinnedPackage], venv: st
     """
 
     if venv:
-        site.addsitedir(f"{venv}/python{sys.version_info.major}.{sys.version_info.minor}/site-packages")
+        # the user may have pyenv installed and are using multiple versions of python
+        # this is a more reliable way of getting the python version's directory name vs sys.version_info
+        site.addsitedir(f"{venv}/{os.listdir(os.path.join(venv, 'lib'))[0]}/site-packages")
 
     # the working_set needs to get refreshed because it is created at import
     # time and becomes stale after the 'pip' command executes
     importlib.reload(pkg_resources)
 
-    existing_packages: List[str] = list(
-        set([pkg.key for directory in sys.path for pkg in pkg_resources.find_distributions(directory)])
-    )
+    existing_packages: Set[str] = {pkg.key for directory in sys.path for pkg in pkg_resources.find_distributions(directory)}
 
     packages_installed: List[PinnedPackage] = []
 
     for package in user_provided_packages:
         if package.name in existing_packages:
-            print(package)
             try:
                 if not package.comparison_operator and not package.version:
                     package.comparison_operator = "~="
-                    package.version = pkg_resources.importlib.metadata.version(package.name)
-            except pkg_resources.importlib.metadata.PackageNotFoundError as error:
-                pass
+                    package.version = importlib.metadata.version(package.name)
+            except importlib.metadata.PackageNotFoundError as error:
+                log.error(str(error))
             finally:
                 packages_installed.append(package)
 
+    log.debug(f"Found matching packages installed {packages_installed}")
     return packages_installed
 
 
@@ -207,6 +219,7 @@ def extract_pinned_packages_from_requirements(
             if not found_comparison_operator:
                 current_requirements.append(PinnedPackage(line))
 
+    log.debug(f"Found current requirements of {current_requirements}")
     return current_requirements
 
 
@@ -253,3 +266,7 @@ def update_requirements_file(
 
         for requirement in current_requirements:
             requirements_file.write(f"{requirement}\n")
+
+    message: str = f"Updated requirements: {str(requirements_txt)}"
+    log.info(message)
+    print(message)

@@ -1,5 +1,9 @@
 black
+build
+pre-commit~=2.20.0
 pydocstyle
 pylint
-build
 twine~=4.0.2
+types-setuptools~=65.6.0.2
+mypy~=0.991
+reorder-python-imports~=3.9.0

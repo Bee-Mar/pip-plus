@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 """ The main entrypoint for the PIP+ CLI application """
+from __future__ import annotations
+
 import sys
 from os import environ
 from pathlib import Path
+
 from pip_plus import utils
+from pip_plus.constants import DEV_ARG
+from pip_plus.constants import INSTALL
+from pip_plus.constants import TEST_ARG
+from pip_plus.constants import UNINSTALL
 from pip_plus.logger import PipPlusLogger
-from pip_plus.constants import INSTALL, UNINSTALL, DEV_ARG, TEST_ARG
 
 
 def main():
@@ -27,9 +33,7 @@ def main():
         or "--requirement" in sys.argv
     ):
 
-        if len(sys.argv) == 1 or (
-            len(sys.argv) > 1 and sys.argv[1] == "help" or sys.argv[1] == "--help" or sys.argv[1] == "-h"
-        ):
+        if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] == "help" or sys.argv[1] == "--help" or sys.argv[1] == "-h"):
             utils.run_user_pip_cmd(["help"])
             utils.usage()
             sys.exit(0)
@@ -48,9 +52,7 @@ def main():
         log.error(message)
         sys.exit(127)
 
-    requirements_txt = (
-        Path(Path(virtual_env).parent / Path(requirements_file)) if virtual_env else Path(requirements_file)
-    )
+    requirements_txt = Path(Path(virtual_env).parent / Path(requirements_file)) if virtual_env else Path(requirements_file)
 
     log.info(f"Targeting {str(requirements_txt)} following 'pip' execution.")
 

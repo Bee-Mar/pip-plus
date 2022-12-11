@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """ Contains class definition of PinnedPackage """
+from __future__ import annotations
 
 
 class PinnedPackage:

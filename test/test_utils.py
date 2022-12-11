@@ -1,22 +1,26 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 import random
 import tempfile
-from pathlib import PosixPath, Path
+from os import chdir
+from os import mkdir
+from pathlib import Path
+from pathlib import PosixPath
 from shutil import rmtree
-from os import chdir, mkdir
 from typing import List
 from unittest.mock import patch
+
 from faker import Faker
+
 from pip_plus import utils
+from pip_plus.constants import COMPARISON_OPERATORS
+from pip_plus.constants import DEV_ARG
+from pip_plus.constants import DEV_REQUIREMENTS_TXT
+from pip_plus.constants import REQUIREMENTS_TXT
+from pip_plus.constants import TEST_ARG
+from pip_plus.constants import TEST_REQUIREMENTS_TXT
 from pip_plus.pinned_package import PinnedPackage
-from pip_plus.constants import (
-    COMPARISON_OPERATORS,
-    REQUIREMENTS_TXT,
-    DEV_REQUIREMENTS_TXT,
-    TEST_REQUIREMENTS_TXT,
-    DEV_ARG,
-    TEST_ARG,
-)
 
 
 def random_int(min_value=1, max_value=10):
@@ -45,9 +49,7 @@ def test_pinned_package_setters():
     random_name: str = fake.word()
     random_version: str = f"{random_int()}.{random_int()}.{random_int()}"
     random_comparison_operator: str = random.choice(COMPARISON_OPERATORS)
-    fixture: PinnedPackage = PinnedPackage(
-        random_name, version=random_version, comparison_operator=random_comparison_operator
-    )
+    fixture: PinnedPackage = PinnedPackage(random_name, version=random_version, comparison_operator=random_comparison_operator)
 
     assert fixture.name == random_name
     assert fixture.version == random_version
@@ -89,15 +91,15 @@ def test_pinned_package_to_string_with_name_only():
     assert str(fixture) == random_name
 
 
-def test_pinned_package_to_string_with_name_only():
+def test_pinned_package_to_string_with_version_and_name():
     fake: Faker = Faker()
     random_name: str = fake.word()
-    random_version: str = f"{fake.pyint(min_value=0, max_value=10)}.{fake.pyint(min_value=0, max_value=10)}.{fake.pyint(min_value=0, max_value=10)}"
+    random_version: str = (
+        f"{fake.pyint(min_value=0, max_value=10)}.{fake.pyint(min_value=0, max_value=10)}.{fake.pyint(min_value=0, max_value=10)}"
+    )
     random_comparison_operator: str = random.choice(COMPARISON_OPERATORS)
 
-    fixture: PinnedPackage = PinnedPackage(
-        random_name, version=random_version, comparison_operator=random_comparison_operator
-    )
+    fixture: PinnedPackage = PinnedPackage(random_name, version=random_version, comparison_operator=random_comparison_operator)
     assert str(fixture) == f"{random_name}{random_comparison_operator}{random_version}"
 
 
@@ -140,7 +142,7 @@ def test_extract_user_provided_packages_for_installation_with_additional_args():
     random_extra_args: List[str] = [f"--{fake.word()}-{fake.word()}"]
 
     extracted_packages = utils.extract_user_provided_packages(
-        ["install", "--upgrade", f"--{fake.word()}" f"--{fake.word()}-{fake.word()}"] + fake_install_arguments
+        ["install", "--upgrade", f"--{fake.word()}" f"--{fake.word()}-{fake.word()}"] + fake_install_arguments,
     )
 
     assert len(fake_install_arguments) == len(extracted_packages)
@@ -161,9 +163,7 @@ def test_extract_user_provided_packages_for_removal_with_additional_args():
     fake_uninstall_arguments: List[str] = [fake.word() for index in range(10)]
     random_extra_args: List[str] = [f"--{fake.word()}-{fake.word()}"]
 
-    extracted_packages = utils.extract_user_provided_packages(
-        ["uninstall"] + random_extra_args + fake_uninstall_arguments
-    )
+    extracted_packages = utils.extract_user_provided_packages(["uninstall"] + random_extra_args + fake_uninstall_arguments)
 
     assert len(fake_uninstall_arguments) == len(extracted_packages)
 
@@ -229,9 +229,7 @@ def test_determine_requirements_file_returns_dev_requirements():
 
 def test_determine_requirements_file_returns_none():
     fake: Faker = Faker()
-    arguments, requirements = utils.determine_requirements_file(
-        [DEV_ARG, TEST_ARG] + [fake.word() for _ in range(random_int())]
-    )
+    arguments, requirements = utils.determine_requirements_file([DEV_ARG, TEST_ARG] + [fake.word() for _ in range(random_int())])
     assert arguments is None and requirements is None
 
 

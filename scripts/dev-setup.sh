@@ -6,4 +6,6 @@ fi
 
 if [[ "$VIRTUAL_ENV" != "" ]]; then
     pip install -r ./requirements.dev.txt -r test/requirements.txt
+    pre-commit install
+    pre-commit autoupdate
 fi
