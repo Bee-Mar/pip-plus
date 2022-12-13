@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
-from setuptools import setup, find_packages
-from typing import List
-from pip_plus.__version__ import semantic_version
+from __future__ import annotations
+
 from pathlib import Path
+from typing import List
+
+from setuptools import find_packages
+from setuptools import setup
+
+from pip_plus.__version__ import semantic_version
+from pip_plus.constants import REQUIREMENTS_TXT
 
 
 def load_requirements() -> List[str]:
@@ -17,8 +23,8 @@ def load_requirements() -> List[str]:
 
     requirements: List[str] = []
 
-    if Path("requirements.txt").exists():
-        with open("requirements.txt") as requirements_file:
+    if Path(REQUIREMENTS_TXT).exists():
+        with open(REQUIREMENTS_TXT) as requirements_file:
             requirements = requirements_file.read().splitlines()
 
     return requirements
@@ -28,7 +34,7 @@ setup(
     name="pip-plus-cli",
     version=semantic_version,
     description="Pip-Plus",
-    long_description="The Pip-Plus CLI automatically updates requirements.txt following install/removal of packages",
+    long_description=open("README.md").read(),
     url="https://github.com/Bee-Mar/pip-plus",
     author="Brandon Marlowe",
     download_url=f"https://github.com/Bee-Mar/pip-plus/archive/refs/tags/v{semantic_version}.tar.gz",
