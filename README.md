@@ -6,8 +6,8 @@
   <a href="http://choosealicense.com/licenses/mit" target="_blank">
     <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
   </a>
-  <a href="https://github.com/Bee-Mar/pip-plus-cli/actions" target="_blank">
-    <img src="https://github.com/bee-mar/pip-plus-cli/actions/workflows/build.yml/badge.svg?master"
+  <a href="https://github.com/Bee-Mar/pip-plus/actions" target="_blank">
+    <img src="https://github.com/bee-mar/pip-plus/actions/workflows/build.yml/badge.svg?main"
     alt="GitHub Actions">
   </a>
   <!-- wait to show once there are some decent download amounts
@@ -19,12 +19,15 @@
   <!-- badges end -->
 
   <!-- main title/logo -->
+  <br/>
+  <br/>
+  <br/>
   <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=L2ML7F8DTMAT2&currency_code=USD&source=ur" target="_blank">
     <img src="assets/pip-plus-logo.png" alt="Pip-Plus-CLI">
   </a>
 </p>
-
-# Pip-Plus-CLI
+<br/>
+<br/>
 
 | Author          | Contact                           |
 | --------------- | --------------------------------- |
